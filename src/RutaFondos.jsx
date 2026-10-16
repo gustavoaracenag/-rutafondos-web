@@ -19,9 +19,9 @@ const PALETTE = {
 // ── Versión y curaduría ──────────────────────────────────────
 // Actualiza estos dos valores cada vez que cambies la base de fondos.
 const VERSION = {
-  label: "v4.0",
-  fecha: "10 de septiembre de 2026",
-  nota: "Corrección de motor de elegibilidad (FOSIS, Startup Ciencia, Desafío Emprendedor, Impulso Chileno) + 2 instrumentos nuevos",
+  label: "v4.1",
+  fecha: "16 de octubre de 2026",
+  nota: "Verificación de convocatorias octubre 2026: Desafío Emprendedor abierto, Startup Ciencia reprogramado, 6 fondos pasan a cerrado",
 };
 
 // ── Preguntas del motor ──────────────────────────────────────
@@ -234,9 +234,9 @@ const FUNDS = [
     type: "publico",
     amount: "$3.500.000",
     refundable: false,
-    conv: "proxima",
+    conv: "cerrada",
     url: "https://www.sercotec.cl/programas/capital-abeja-emprende/",
-    calendar: "Convocatoria anual por región, en fechas similares a Capital Semilla (otoño). Revisa el calendario de tu región en sercotec.cl.",
+    calendar: "Convocatoria 2026: se abrió por región en torno a mayo (cerrada). Es anual: la próxima debería abrir en el primer semestre de 2027. Revisa el calendario de tu región en sercotec.cl.",
     what: "La versión de Capital Semilla exclusiva para mujeres: financia la creación y formalización de negocios liderados por emprendedoras, con acompañamiento técnico.",
     reqs: ["Ser mujer, mayor de 18 años", "Tener un emprendimiento o idea de emprendimiento", "NO tener inicio de actividades en 1ª categoría ante el SII"],
     route: [
@@ -257,9 +257,9 @@ const FUNDS = [
     type: "publico",
     amount: "$3.500.000",
     refundable: false,
-    conv: "abierta",
+    conv: "cerrada",
     url: "https://www.sercotec.cl/postulaciones-abiertas/",
-    calendar: "Convocatoria 2026: 1 al 15 de julio (15:00). En La Araucanía el plazo se amplió hasta el 24 de julio a las 12:00 — revisa si tu región también amplió en sercotec.cl.",
+    calendar: "Convocatoria 2026: 1 al 15 de julio, con ampliaciones regionales hasta el 24 de julio (cerrada). Es anual: la próxima debería abrir en torno a julio de 2027.",
     what: "Apoya la puesta en marcha de negocios liderados por mujeres en rubros con mayor presencia masculina (construcción, manufactura, transporte, mantenimiento automotriz, tecnologías de la información, electricidad, entre otros). Del subsidio, entre $200.000 y $500.000 van a gestión empresarial y entre $3.000.000 y $3.300.000 a inversiones.",
     reqs: ["Ser mujer mayor de 18 años, con sexo registral femenino", "Sin inicio de actividades en 1ª categoría ante el SII", "Residir en la región de la convocatoria", "Proyecto en un rubro masculinizado según las bases", "Aporte empresarial del 3% del subsidio (~$105.000)", "Solo una postulación por persona"],
     route: [
@@ -278,11 +278,11 @@ const FUNDS = [
     name: "Fondo Crece",
     inst: "Sercotec",
     type: "publico",
-    amount: "Hasta ~$5.000.000",
+    amount: "Hasta ~$5.000.000 (Crece Sostenible: $7 a $9 millones)",
     refundable: false,
-    conv: "proxima",
+    conv: "cerrada",
     url: "https://www.sercotec.cl/crece/",
-    calendar: "Convocatorias por región durante el año, habitualmente entre abril y julio. Existe también la variante Crece Sostenible.",
+    calendar: "Convocatorias 2026 por región entre abril y julio (cerradas); Crece Sostenible cerró el 7-8 de julio. La próxima ronda debería abrir en el otoño de 2027.",
     what: "Financia inversiones y acciones para potenciar el crecimiento de micro y pequeñas empresas ya formalizadas: maquinaria, infraestructura, marketing, gestión.",
     reqs: ["Empresa con inicio de actividades en 1ª categoría", "Ventas dentro de los tramos de micro o pequeña empresa (hasta 25.000 UF anuales)", "Requisitos específicos según bases regionales"],
     route: [
@@ -418,9 +418,9 @@ const FUNDS = [
     type: "publico",
     amount: "Variable según línea de concurso",
     refundable: false,
-    conv: "abierta",
+    conv: "cerrada",
     url: "https://www.fondosdecultura.cl",
-    calendar: "Las convocatorias suelen abrir entre junio y agosto de cada año para el ciclo siguiente — es decir, ahora es buen momento para revisar.",
+    calendar: "Fondos Cultura 2027: Fondart Regional cerró el 9 de septiembre y Fondart Nacional el 10 de septiembre de 2026. Algunas líneas tienen plazos propios: revisa fondosdecultura.cl/convocatorias-abiertas. El próximo ciclo debería abrir en agosto de 2027.",
     what: "Para proyectos artísticos, culturales, de artesanía, diseño, arquitectura y patrimonio. Líneas de creación, difusión, circulación (nacional e internacional) y formación.",
     reqs: ["Registrarte en la plataforma Perfil Cultura", "Cumplir la línea de concurso pertinente a tu disciplina", "Cofinanciamiento obligatorio en algunas líneas"],
     route: [
@@ -442,7 +442,7 @@ const FUNDS = [
     refundable: false,
     conv: "proxima",
     url: "https://anid.cl/concursos/startup-ciencia-2027/",
-    calendar: "Startup Ciencia 2027: apertura julio 2026, cierre septiembre 2026, fallo febrero 2027. ANID la marca como concurso próximo — revisa anid.cl para la fecha exacta de apertura.",
+    calendar: "Startup Ciencia 2027: ANID reprogramó el concurso — apertura en octubre de 2026, cierre en noviembre de 2026, fallo en abril de 2027. Puede abrir en cualquier momento: revisa anid.cl esta semana.",
     what: "Para emprendimientos de base científico-tecnológica que nacen de investigación y desarrollo, con foco en llevar la ciencia al mercado.",
     reqs: ["Emprendimiento de base científico-tecnológica", "Componente real de I+D", "Requisitos de la convocatoria vigente"],
     route: [
@@ -463,11 +463,11 @@ const FUNDS = [
     type: "privado",
     amount: "Hasta $5.000.000 (500 ganadores/año)",
     refundable: false,
-    conv: "proxima",
+    conv: "cerrada",
     url: "https://www.fundacionluksic.cl/programas/impulso-chileno/",
-    calendar: "Convocatoria anual: la edición 2025 postuló del 22 sep al 6 oct. La próxima debería abrir alrededor de septiembre 2026 — ¡queda poco!",
+    calendar: "Edición 2026 (8ª versión): postulaciones del 1 al 15 de septiembre (cerrada). Es anual y la ventana es corta: la próxima debería abrir a inicios de septiembre de 2027.",
     what: "Programa privado que entrega capital, formación y acompañamiento a emprendedores formalizados de todo Chile. Incluye un diagnóstico en la plataforma La Brújula del Emprendedor.",
-    reqs: ["Mayor de 18 años, chileno/a o extranjero/a con residencia definitiva", "Inicio de actividades en 1ª categoría (persona natural o jurídica)", "Ser dueño/a o socio/a mayoritario/a", "Ventas netas anuales entre 150 UF y 5.000 UF"],
+    reqs: ["Mayor de 18 años, chileno/a o extranjero/a con residencia definitiva", "Inicio de actividades en 1ª categoría (persona natural o jurídica) antes del 1 de marzo (requisito de la edición 2026; confirma la fecha de corte en las bases de cada año)", "Ser dueño/a o socio/a mayoritario/a", "Ventas netas anuales superiores a 150 UF e inferiores a 5.000 UF", "Diagnóstico previo obligatorio en La Brújula del Emprendedor"],
     route: [
       "Sigue las redes y el sitio de Fundación Luksic para la apertura",
       "Completa el diagnóstico en La Brújula del Emprendedor",
@@ -532,19 +532,19 @@ const FUNDS = [
     name: "Desafío Emprendedor",
     inst: "Banco de Chile",
     type: "privado",
-    amount: "Premios en capital + formación",
+    amount: "Más de $200 millones en premios (hasta $25M por línea)",
     refundable: false,
-    conv: "proxima",
+    conv: "abierta",
     url: "https://sitiospublicos.bancochile.cl/desafio-emprendedor",
-    calendar: "Concurso nacional anual (va en su 10ª versión). Postulación 100% online — revisa el sitio para la convocatoria vigente.",
-    what: "Uno de los concursos privados más masivos de Chile: premia pymes y emprendimientos de todo el país con capital, capacitación y visibilidad.",
-    reqs: ["Tener una pyme o emprendimiento en marcha", "Postulación online según bases de la versión vigente"],
+    calendar: "11ª edición: postulaciones del 10 de septiembre al 18 de octubre de 2026 en bancochile.cl. ¡Cierra el 18 de octubre!",
+    what: "Uno de los concursos privados más masivos de Chile. Tres líneas: Pyme Local, Pyme Global y Startup (nueva). Primer lugar $25 millones por línea, más formación y visibilidad. Incluye la mención Emprendedor Silver ($5 millones) para el finalista mejor evaluado mayor de 50 años.",
+    reqs: ["Empresa formalizada ante el SII al momento de postular (persona natural con giro o persona jurídica)", "Ventas anuales menores o iguales a 25.000 UF, o sin ventas a la fecha", "Postulación online y gratuita"],
     route: [
       "Entra al sitio del concurso y revisa si la convocatoria del año está abierta",
       "Prepara una buena descripción de tu negocio y su impacto",
     ],
     evaluate: (a) => {
-      if (a.etapa === "idea") return { status: "despues", unlock: "Pensado para negocios en marcha: se desbloquea cuando empieces a vender." };
+      if (a.etapa !== "formal") return { status: "despues", unlock: "Exige empresa formalizada ante el SII: se desbloquea cuando inicies actividades." };
       return { status: "hoy" };
     },
   },
@@ -578,9 +578,9 @@ const FUNDS = [
     type: "privado",
     amount: "Premios en capital + aceleración",
     refundable: false,
-    conv: "proxima",
+    conv: "cerrada",
     url: "https://www.jumpchile.com",
-    calendar: "Convocatoria anual, habitualmente en el primer semestre.",
+    calendar: "Edición 2026: convocatoria del 17 de agosto al 21 de septiembre (cerrada). Es anual: la próxima debería abrir en agosto de 2027.",
     what: "El concurso de emprendimiento universitario más grande de Chile y Latinoamérica: acepta desde ideas hasta proyectos en marcha de estudiantes de educación superior.",
     reqs: ["Ser estudiante de educación superior (Chile o Latinoamérica)", "Proyecto o idea de emprendimiento según bases de la versión"],
     route: [
