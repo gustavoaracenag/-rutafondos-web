@@ -36,6 +36,7 @@ export const trackCompletado = (answers, results) => {
     ventas: v("ventas"),
     deudas: v("deudas"),
     rsh: v("rsh"),
+    empleo: v("empleo"), // nuevo en v4.2: situación laboral (solo tramo 40% del RSH)
     n_puedes_postular: results.hoy.length,
     n_falta_paso: results.paso.length,
     n_mas_adelante: results.despues.length,

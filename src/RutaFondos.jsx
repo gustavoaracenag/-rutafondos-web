@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { trackInicio, trackRespuesta, trackMenor, trackCompletado, trackClicFondo } from "./analytics";
 
 // ─────────────────────────────────────────────────────────────
-// RutaFondos v3 — Orientador de financiamiento · Chile 2026
+// RutaFondos v4.2 — Orientador de financiamiento · Chile 2026
 // Segmentación fina: etapa, sector, perfil, ventas, edad, deudas
 // Motor de elegibilidad determinista (mismo ADN que AccesoJusto)
 // ─────────────────────────────────────────────────────────────
@@ -19,9 +20,9 @@ const PALETTE = {
 // ── Versión y curaduría ──────────────────────────────────────
 // Actualiza estos dos valores cada vez que cambies la base de fondos.
 const VERSION = {
-  label: "v4.1",
-  fecha: "16 de octubre de 2026",
-  nota: "Verificación de convocatorias octubre 2026: Desafío Emprendedor abierto, Startup Ciencia reprogramado, 6 fondos pasan a cerrado",
+  label: "v4.2",
+  fecha: "17 de octubre de 2026",
+  nota: "Verificación 17-10-2026 · Correcciones de motor y montos (Emprendamos Semilla, Startup Ciencia, Fondo Crece, Impulso Chileno) + Digitaliza tu Almacén, Impulso Mujer y Crece Sostenible + líneas Mujeres de Corfo",
 };
 
 // ── Preguntas del motor ──────────────────────────────────────
@@ -142,6 +143,18 @@ const QUESTIONS = [
       { value: "nose", label: "No lo sé" },
     ],
   },
+  {
+    id: "empleo",
+    label: "Tu situación laboral",
+    text: "¿Cuál es tu situación laboral hoy?",
+    help: "La línea Semilla de FOSIS está dirigida a personas sin trabajo o con un empleo precario.",
+    showIf: (a) => a.etapa !== "formal" && a.rsh === "tramo40",
+    options: [
+      { value: "desempleado", label: "Sin trabajo", sub: "Cesante o buscando trabajo" },
+      { value: "precario", label: "Trabajo informal, esporádico o precario" },
+      { value: "estable", label: "Tengo un empleo estable", sub: "Dependiente o independiente con ingresos regulares" },
+    ],
+  },
 ];
 
 // ── Helper: gate de deudas para fondos Sercotec ──────────────
@@ -160,13 +173,13 @@ const FUNDS = [
     name: "Emprendamos Semilla",
     inst: "FOSIS",
     type: "publico",
-    amount: "Hasta $800.000",
+    amount: "$430.000 a $600.000",
     refundable: false,
     conv: "cerrada",
     url: "https://www.fosis.gob.cl/es/programas/autonomia-economica/emprendamos-semilla/",
     calendar: "Convocatoria 2026: 15 al 30 de abril (cerrada); resultados el 20 de mayo. FOSIS indica que pueden quedar cupos en algunos territorios — vale la pena consultar tu comuna.",
     what: "Capacitación, financiamiento para insumos o equipamiento, y acompañamiento para partir un negocio o trabajo independiente.",
-    reqs: ["Mayor de 18 años", "Estar en el 40% más vulnerable según el Registro Social de Hogares, o participar en el Subsistema Seguridades y Oportunidades", "Tener una idea de negocio o un pequeño emprendimiento en funcionamiento", "Residir en una comuna donde se ejecute el programa", "Contar con ClaveÚnica"],
+    reqs: ["Mayor de 18 años", "Estar en el 40% más vulnerable según el Registro Social de Hogares, o participar en el Subsistema Seguridades y Oportunidades", "Estar sin trabajo o con un empleo precario", "Tener una idea de negocio o un pequeño emprendimiento en funcionamiento", "Residir en una comuna donde se ejecute el programa", "Contar con ClaveÚnica"],
     route: [
       "Obtén tu ClaveÚnica si aún no la tienes (Registro Civil o ChileAtiende)",
       "Revisa tu tramo en registrosocial.gob.cl",
@@ -175,7 +188,10 @@ const FUNDS = [
     ],
     evaluate: (a) => {
       if (a.etapa === "formal") return null;
-      if (a.rsh === "tramo40") return { status: "hoy" };
+      if (a.rsh === "tramo40") {
+        if (a.empleo === "desempleado" || a.empleo === "precario") return { status: "hoy" };
+        return { status: "paso", pending: "Esta línea está dirigida a personas sin trabajo o con empleo precario. Si tu situación laboral cambia, calzas con el resto de los requisitos." };
+      }
       if (a.rsh === "tramo60") return { status: "paso", pending: "La línea Semilla exige estar en el 40% más vulnerable del Registro Social de Hogares. Con tu tramo (41–60%) puedes revisar el programa Emprendamos de FOSIS, dirigido a negocios ya en funcionamiento, en fosis.gob.cl." };
       if (a.rsh === "nose") return { status: "paso", pending: "Verifica tu tramo en registrosocial.gob.cl. Si estás dentro del 40% más vulnerable, puedes postular a esta línea." };
       return null;
@@ -274,25 +290,73 @@ const FUNDS = [
     },
   },
   {
+    id: "sercotec-almacen",
+    name: "Digitaliza tu Almacén",
+    inst: "Sercotec",
+    type: "publico",
+    amount: "$3.000.000",
+    refundable: false,
+    conv: "cerrada",
+    url: "https://www.ventanillaunicasocial.gob.cl/ficha/383/digitaliza-tu-almacen",
+    calendar: "Convocatoria 2026: 30 de enero al 10 de febrero (cerrada). Es anual: la próxima debería abrir a inicios de 2027.",
+    what: "Fondo para almacenes de barrio: financia capacitación, asistencia técnica, marketing, habilitación de infraestructura, compra de activos o capital de trabajo para modernizar y digitalizar el negocio.",
+    reqs: ["Almacén de barrio: minimarket, panadería, pastelería, carnicería, pescadería, botillería, verdulería, rotisería, librería de barrio, entre otros", "Inicio de actividades en 1ª categoría con más de 12 meses de antigüedad", "Ventas netas anuales de hasta 5.000 UF", "Estar inscrito/a en el curso \"Almacenes de Chile\" del portal de capacitación de Sercotec", "Aporte propio según bases"],
+    route: [
+      "Inscríbete ahora en el curso \"Almacenes de Chile\" en el portal de capacitación de Sercotec: es requisito para postular",
+      "Regístrate en sercotec.cl y revisa las bases de tu región cuando abra la convocatoria",
+      "Postula con tu plan de mejora del almacén",
+    ],
+    evaluate: (a) => {
+      if (a.sector !== "tradicional") return null;
+      if (a.etapa !== "formal") return { status: "despues", unlock: "Si tienes un almacén de barrio, se desbloquea con 12 meses de inicio de actividades en 1ª categoría." };
+      if (a.ventas === "mas5000") return null;
+      return { status: "paso", pending: "Aplica solo a almacenes de barrio con más de 12 meses de inicio de actividades. Si es tu caso, inscríbete ya en el curso \"Almacenes de Chile\" de Sercotec: es requisito para postular." };
+    },
+  },
+  {
     id: "sercotec-crece",
     name: "Fondo Crece",
     inst: "Sercotec",
     type: "publico",
-    amount: "Hasta ~$5.000.000 (Crece Sostenible: $7 a $9 millones)",
+    amount: "$5.000.000",
     refundable: false,
     conv: "cerrada",
     url: "https://www.sercotec.cl/crece/",
-    calendar: "Convocatorias 2026 por región entre abril y julio (cerradas); Crece Sostenible cerró el 7-8 de julio. La próxima ronda debería abrir en el otoño de 2027.",
+    calendar: "Convocatoria 2026: cerró el 11 de junio (fechas por región). Es anual: la próxima debería abrir en el otoño de 2027.",
     what: "Financia inversiones y acciones para potenciar el crecimiento de micro y pequeñas empresas ya formalizadas: maquinaria, infraestructura, marketing, gestión.",
-    reqs: ["Empresa con inicio de actividades en 1ª categoría", "Ventas dentro de los tramos de micro o pequeña empresa (hasta 25.000 UF anuales)", "Requisitos específicos según bases regionales"],
+    reqs: ["Empresa con inicio de actividades en 1ª categoría", "Ventas netas anuales entre 200 y 25.000 UF si tienes más de 1 año; si eres nueva, al menos 20 UF y 3 meses de inicio de actividades", "Sin deudas laborales ni previsionales, y no figurar en el Registro de Deudores de Pensiones de Alimentos", "Carpeta tributaria electrónica del SII", "Cofinanciamiento propio según bases regionales; el IVA lo financia la empresa"],
     route: [
       "Regístrate en sercotec.cl",
       "Revisa las bases de la convocatoria Crece de tu región",
       "Postula con un plan de inversión con cotizaciones de respaldo",
     ],
     evaluate: (a) => {
-      if (a.etapa === "formal") return { status: "hoy" };
-      return { status: "despues", unlock: "Se desbloquea cuando formalices tu empresa ante el SII y registres ventas." };
+      if (a.etapa !== "formal") return { status: "despues", unlock: "Se desbloquea cuando formalices tu empresa ante el SII y registres ventas." };
+      if (a.ventas === "menos150") return { status: "paso", pending: "El mínimo es 200 UF de ventas anuales (~$7,8 millones) si tu empresa tiene más de un año, o 20 UF si tiene menos de un año. Revisa en qué caso estás." };
+      if (a.ventas === "nose") return { status: "paso", pending: "Calcula tus ventas netas anuales: necesitas al menos 200 UF si tu empresa tiene más de un año (20 UF si es nueva) y no más de 25.000 UF." };
+      return { status: "hoy" };
+    },
+  },
+  {
+    id: "sercotec-crece-sostenible",
+    name: "Crece Sostenible",
+    inst: "Sercotec",
+    type: "publico",
+    amount: "$7.000.000 a $9.000.000",
+    refundable: false,
+    conv: "cerrada",
+    url: "https://www.sercotec.cl/crece/",
+    calendar: "Convocatoria 2026: cerró el 7-8 de julio según la región, con un presupuesto nacional para 370 micro y pequeñas empresas y cooperativas. La próxima debería abrir a mediados de 2027.",
+    what: "Variante del Fondo Crece para micro y pequeñas empresas y cooperativas que quieren crecer incorporando prácticas sostenibles. Entrega casi el doble que el Crece tradicional.",
+    reqs: ["Empresa o cooperativa con inicio de actividades en 1ª categoría", "Plan de inversión con un componente de sostenibilidad (revisa en las bases qué inversiones califican)", "Requisitos de ventas y admisibilidad según las bases regionales"],
+    route: [
+      "Regístrate en sercotec.cl",
+      "Revisa las bases de Crece Sostenible de tu región y qué inversiones sostenibles califican",
+      "Postula con un plan de inversión con cotizaciones de respaldo",
+    ],
+    evaluate: (a) => {
+      if (a.etapa !== "formal") return { status: "despues", unlock: "Se desbloquea cuando formalices tu empresa ante el SII y registres ventas." };
+      return { status: "paso", pending: "Tu plan de inversión debe tener un componente de sostenibilidad. Revisa en las bases regionales qué inversiones califican antes de postular." };
     },
   },
   {
@@ -302,13 +366,13 @@ const FUNDS = [
     type: "publico",
     amount: "Hasta $15.000.000 ($17M si es liderado por mujer)",
     refundable: false,
-    conv: "proxima",
+    conv: "sin_fecha",
     url: "https://www.corfo.cl/sites/cpp/inf/semilla-inicia",
-    calendar: "Llamados con calendario propio (no permanente). Revisa \"Convocatorias\" en corfo.cl durante todo el año.",
+    calendar: "Sin convocatoria anunciada a la fecha. Corfo abre llamados nacionales y regionales con calendario propio. En 2026 hubo una línea exclusiva Semilla Inicia Mujeres (hasta $17 millones, cofinanciamiento de hasta 85%), que cerró el 15 de junio. Revisa \"Convocatorias\" en corfo.gob.cl.",
     what: "Subsidio para emprendimientos innovadores en etapa temprana (idea, diseño o prototipo, sin ventas regulares), con foco en reducir la brecha de acceso a capital de las emprendedoras.",
     reqs: ["Proyecto innovador: solución claramente distinta a lo existente", "Etapa temprana: sin ventas regulares", "Presupuesto con cotizaciones y plan de negocio con cliente específico identificado"],
     route: [
-      "Revisa convocatorias vigentes en corfo.cl",
+      "Revisa convocatorias vigentes en corfo.gob.cl",
       "Prepara plan de negocio: problema, cliente, solución, diferenciación",
       "Cada gasto del presupuesto debe tener respaldo — los presupuestos sin cotizaciones son la causa más común de rechazo",
     ],
@@ -328,11 +392,11 @@ const FUNDS = [
     refundable: false,
     conv: "cerrada",
     url: "https://www.corfo.cl/sites/cpp/emp-semilla-expande",
-    calendar: "Convocatoria nacional 2026: 15 ene – 24 feb (cerrada). Hay llamados regionales durante el año; el nacional suele repetirse a inicios de año.",
+    calendar: "Convocatoria nacional 2026: 15 ene – 24 feb (cerrada; en 2026 Corfo la publicó como \"Expande\"). Además hubo una línea exclusiva Semilla Expande Mujeres, del 12 de mayo al 16 de junio, con hasta $50,9 millones y cofinanciamiento de hasta 85%. Los llamados regionales tienen montos menores (en torno a $25 millones). El nacional suele repetirse a inicios de año.",
     what: "Subsidio para emprendimientos innovadores que ya validaron su solución y tienen ventas iniciales, y necesitan capital para escalar. Se entrega en 2 etapas contra hitos.",
     reqs: ["Empresa formalizada y facturando con la solución que quiere escalar", "Innovación y escalabilidad demostrables", "Cofinanciamiento propio en efectivo: 25% (15% si es liderada por mujer)", "Nota mínima 3,0 en la evaluación"],
     route: [
-      "Revisa el calendario en corfo.cl",
+      "Revisa el calendario en corfo.gob.cl",
       "Prepara evidencia de tracción: ventas, clientes, métricas de crecimiento",
       "Considera que el subsidio cubre valores netos: el IVA sale de tu caja",
     ],
@@ -352,13 +416,13 @@ const FUNDS = [
     refundable: false,
     conv: "cerrada",
     url: "https://www.corfo.gob.cl/sites/cpp/programa/startup-chile/",
-    calendar: "Generación BIG 12: postulaciones del 4 al 25 de mayo de 2026 (cerrada). Las convocatorias son anuales — revisa startupchile.org y corfo.cl.",
+    calendar: "Generación BIG 12: postulaciones del 4 al 25 de mayo de 2026 (cerrada). Las convocatorias son anuales — revisa startupchile.org y corfo.gob.cl.",
     what: "La aceleradora pública de Corfo, con tres líneas según la etapa de tu startup: Build (la más inicial), Ignite y Growth. Además del subsidio entrega aceleración intensiva, espacio de co-work, mentorías y conexión con el ecosistema. Abierta a startups de cualquier nacionalidad que usen Chile como plataforma.",
     reqs: ["Mayor de 18 años, fundador/a o socio/a de un proyecto de base tecnológica", "El proyecto debe usar Chile como plataforma de escalamiento global", "Build: hasta 12 meses desde el inicio de actividades — Ignite: hasta 36 meses", "Growth: entre 24 y 120 meses, con ventas de 2.400 a 25.000 UF en los últimos 12 meses", "Innovación, escalabilidad y potencial de impacto global"],
     route: [
       "Identifica qué línea te corresponde según la antigüedad de tu empresa: Build, Ignite o Growth",
       "Revisa las bases en startupchile.org y prepara tu pitch: problema, solución, tracción y potencial global",
-      "Postula en línea en startupchile.org o corfo.cl cuando abra la convocatoria",
+      "Postula en línea en startupchile.org o corfo.gob.cl cuando abra la convocatoria",
       "Si tu proyecto es liderado por una mujer: al menos el 50% de los seleccionados en Build deben serlo, y en Ignite y Growth accedes a mayor cofinanciamiento",
     ],
     evaluate: (a) => {
@@ -374,7 +438,7 @@ const FUNDS = [
     type: "publico",
     amount: "Garantía estatal para créditos",
     refundable: true,
-    conv: "abierta",
+    conv: "permanente",
     url: "https://www.fogape.cl",
     calendar: "Disponible de forma permanente a través de los bancos adheridos.",
     what: "No es un fondo concursable: es una garantía del Estado que respalda tu crédito bancario cuando no tienes garantías propias suficientes. El crédito sí se paga.",
@@ -396,7 +460,7 @@ const FUNDS = [
     type: "publico",
     amount: "Variable según programa",
     refundable: false,
-    conv: "abierta",
+    conv: "permanente",
     url: "https://www.indap.gob.cl",
     calendar: "Convocatorias durante todo el año, según programa y región.",
     what: "Para emprendimientos agrícolas y rurales: programas de inversión, riego, praderas, turismo rural y desarrollo de la agricultura familiar campesina.",
@@ -438,21 +502,24 @@ const FUNDS = [
     name: "Startup Ciencia",
     inst: "ANID",
     type: "publico",
-    amount: "Subsidio para I+D empresarial",
+    amount: "Hasta $134.550.000 por proyecto",
     refundable: false,
     conv: "proxima",
     url: "https://anid.cl/concursos/startup-ciencia-2027/",
     calendar: "Startup Ciencia 2027: ANID reprogramó el concurso — apertura en octubre de 2026, cierre en noviembre de 2026, fallo en abril de 2027. Puede abrir en cualquier momento: revisa anid.cl esta semana.",
-    what: "Para emprendimientos de base científico-tecnológica que nacen de investigación y desarrollo, con foco en llevar la ciencia al mercado.",
-    reqs: ["Emprendimiento de base científico-tecnológica", "Componente real de I+D", "Requisitos de la convocatoria vigente"],
+    what: "Para empresas de base científico-tecnológica en etapa temprana: cofinancia el desarrollo tecnológico y la validación técnica y comercial de nuevos productos o servicios. Proyectos de hasta 12 meses, extensibles por 6 meses una sola vez.",
+    reqs: ["Persona jurídica de derecho privado constituida en Chile, con o sin fines de lucro", "Menos de 10 años desde la constitución (confirma el plazo en las bases vigentes)", "Ventas anuales de hasta 25.000 UF", "Equipo mínimo de 3 personas: Director/a de Proyecto, Gerente de Proyecto y Personal Científico Técnico", "Cofinanciamiento propio", "Patrocinio de una institución con Departamento de Transferencia Tecnológica (DTT)"],
     route: [
-      "Revisa el calendario de concursos en anid.cl",
-      "Prepara la evidencia científico-técnica de tu solución",
+      "Contacta temprano al Departamento de Transferencia Tecnológica de una universidad: el patrocinio es requisito",
+      "Arma el equipo mínimo de 3 personas con los roles que exigen las bases",
+      "Prepara la evidencia científico-técnica y el plan de validación comercial",
       "Postula en la plataforma de ANID cuando abra el llamado",
     ],
     evaluate: (a) => {
       if (a.sector !== "ciencia") return null;
-      return { status: "hoy" };
+      if (a.etapa !== "formal") return { status: "despues", unlock: "Requiere una empresa ya constituida. Se desbloquea cuando formalices la empresa y armes un equipo mínimo de 3 personas." };
+      if (a.ventas === "mas5000") return { status: "paso", pending: "Las ventas no pueden superar las 25.000 UF anuales. Además necesitas equipo mínimo de 3 personas, patrocinio de un Departamento de Transferencia Tecnológica y cofinanciamiento propio." };
+      return { status: "paso", pending: "Exige tres cosas que conviene resolver antes de que abra: equipo mínimo de 3 personas con roles definidos, patrocinio de un Departamento de Transferencia Tecnológica y cofinanciamiento propio. Si ya los tienes, estás habilitado/a." };
     },
   },
   // ══ PRIVADOS Y CONCURSOS ══
@@ -461,13 +528,13 @@ const FUNDS = [
     name: "Impulso Chileno",
     inst: "Fundación Luksic",
     type: "privado",
-    amount: "Hasta $5.000.000 (500 ganadores/año)",
+    amount: "$1.500.000 a $5.000.000 (500 ganadores/año)",
     refundable: false,
     conv: "cerrada",
     url: "https://www.fundacionluksic.cl/programas/impulso-chileno/",
     calendar: "Edición 2026 (8ª versión): postulaciones del 1 al 15 de septiembre (cerrada). Es anual y la ventana es corta: la próxima debería abrir a inicios de septiembre de 2027.",
     what: "Programa privado que entrega capital, formación y acompañamiento a emprendedores formalizados de todo Chile. Incluye un diagnóstico en la plataforma La Brújula del Emprendedor.",
-    reqs: ["Mayor de 18 años, chileno/a o extranjero/a con residencia definitiva", "Inicio de actividades en 1ª categoría (persona natural o jurídica) antes del 1 de marzo (requisito de la edición 2026; confirma la fecha de corte en las bases de cada año)", "Ser dueño/a o socio/a mayoritario/a", "Ventas netas anuales superiores a 150 UF e inferiores a 5.000 UF", "Diagnóstico previo obligatorio en La Brújula del Emprendedor"],
+    reqs: ["Mayor de 18 años, chileno/a o extranjero/a con residencia definitiva", "Inicio de actividades en 1ª categoría (persona natural o jurídica) antes del 1 de marzo (requisito de la edición 2026; confirma la fecha de corte en las bases de cada año)", "Ser dueño/a o socio/a mayoritario/a", "Ventas netas anuales superiores a 150 UF e inferiores a 5.000 UF", "Diagnóstico previo obligatorio en La Brújula del Emprendedor", "Sin deudas laborales ni previsionales", "No pueden postular: negocios informales, quienes operan en 2ª categoría (boleta de honorarios) ni ganadores de versiones anteriores"],
     route: [
       "Sigue las redes y el sitio de Fundación Luksic para la apertura",
       "Completa el diagnóstico en La Brújula del Emprendedor",
@@ -479,6 +546,29 @@ const FUNDS = [
       if (a.ventas === "menos150") return { status: "paso", pending: "Tus ventas aún no alcanzan el mínimo de 150 UF anuales (~$6 millones). Cuando las superes, calzas perfecto con este programa." };
       if (a.ventas === "nose") return { status: "paso", pending: "Calcula tus ventas netas anuales: para postular deben estar entre 150 y 5.000 UF." };
       return null; // > 5.000 UF excede el tramo
+    },
+  },
+  {
+    id: "impulso-mujer",
+    name: "Impulso Mujer",
+    inst: "Fundación Luksic",
+    type: "privado",
+    amount: "$1.000.000 a $2.000.000 (300 ganadoras)",
+    refundable: false,
+    conv: "cerrada",
+    url: "https://fundacionluksic.cl/noticias/mas-de-15-000-emprendedoras-de-todo-el-pais-postularon-a-impulso-mujer/",
+    calendar: "Edición 2026: postulaciones del 18 de mayo al 2 de junio (cerrada); ganadoras anunciadas el 6 de julio. Es anual: la próxima debería abrir en mayo de 2027.",
+    what: "Programa para emprendedoras con negocio formalizado: entrega capital para activos fijos, herramientas de digitalización, difusión y capital de trabajo, junto con formación. En 2026 postularon más de 15.000 mujeres.",
+    reqs: ["Ser mujer", "Negocio formalizado", "Los requisitos completos (ventas, antigüedad) se publican en las bases de cada edición"],
+    route: [
+      "Sigue el sitio y las redes de Fundación Luksic para la apertura en mayo",
+      "Revisa las bases de la edición apenas se publiquen",
+      "Postula en línea dentro del plazo: la ventana dura unas dos semanas",
+    ],
+    evaluate: (a) => {
+      if (a.mujer !== "si") return null;
+      if (a.etapa !== "formal") return { status: "despues", unlock: "Se desbloquea cuando formalices tu negocio ante el SII." };
+      return { status: "hoy" };
     },
   },
   {
@@ -535,8 +625,9 @@ const FUNDS = [
     amount: "Más de $200 millones en premios (hasta $25M por línea)",
     refundable: false,
     conv: "abierta",
+    cierre: "2026-10-18",
     url: "https://sitiospublicos.bancochile.cl/desafio-emprendedor",
-    calendar: "11ª edición: postulaciones del 10 de septiembre al 18 de octubre de 2026 en bancochile.cl. ¡Cierra el 18 de octubre!",
+    calendar: "11ª edición: postulaciones del 10 de septiembre al 18 de octubre de 2026 en bancochile.cl. Es anual: la próxima debería abrir en septiembre de 2027.",
     what: "Uno de los concursos privados más masivos de Chile. Tres líneas: Pyme Local, Pyme Global y Startup (nueva). Primer lugar $25 millones por línea, más formación y visibilidad. Incluye la mención Emprendedor Silver ($5 millones) para el finalista mejor evaluado mayor de 50 años.",
     reqs: ["Empresa formalizada ante el SII al momento de postular (persona natural con giro o persona jurídica)", "Ventas anuales menores o iguales a 25.000 UF, o sin ventas a la fecha", "Postulación online y gratuita"],
     route: [
@@ -614,11 +705,11 @@ const ALWAYS_RESOURCES = [
 ];
 
 // ── Estado de la convocatoria (curaduría verificada) ─────────
-const ULTIMA_VERIFICACION = "23 de julio de 2026";
-
 const CONV_META = {
   abierta: { label: "Convocatoria abierta", color: PALETTE.green, dot: "●" },
   proxima: { label: "Próxima a abrir", color: PALETTE.amber, dot: "◔" },
+  permanente: { label: "Disponible todo el año", color: "#5B8DB8", dot: "◆" },
+  sin_fecha: { label: "Sin fecha anunciada", color: PALETTE.gray, dot: "○" },
   cerrada: { label: "Convocatoria cerrada", color: PALETTE.gray, dot: "○" },
 };
 
@@ -633,6 +724,7 @@ export default function RutaFondos() {
   const [answers, setAnswers] = useState({});
   const [step, setStep] = useState(-1); // -1 = portada
   const [openCard, setOpenCard] = useState(null);
+  const enviado = useRef(false);
 
   const visibleQuestions = QUESTIONS.filter((q) => !q.showIf || q.showIf(answers));
   const done = step >= visibleQuestions.length && step !== 999;
@@ -641,7 +733,9 @@ export default function RutaFondos() {
   const answer = (qid, value) => {
     const next = { ...answers, [qid]: value };
     setAnswers(next);
+    trackRespuesta(qid, value);
     if (qid === "edad" && value === "menor18") {
+      trackMenor();
       setStep(999);
       return;
     }
@@ -654,6 +748,7 @@ export default function RutaFondos() {
     setAnswers({});
     setStep(-1);
     setOpenCard(null);
+    enviado.current = false;
   };
 
   // Resultados del motor
@@ -664,6 +759,14 @@ export default function RutaFondos() {
       if (r && r.status) results[r.status].push({ ...f, ...r });
     });
   }
+
+  // Envío a GA4 al completar el diagnóstico (una sola vez por diagnóstico)
+  useEffect(() => {
+    if (done && !isMinor && !enviado.current) {
+      trackCompletado(answers, results);
+      enviado.current = true;
+    }
+  }, [done]);
 
   // ── UI helpers ──
   const Chip = ({ children, color }) => (
@@ -681,6 +784,7 @@ export default function RutaFondos() {
 
   const FundCard = ({ fund }) => {
     const open = openCard === fund.id;
+    const conv = fund.cierre && new Date() > new Date(fund.cierre + "T23:59:59") ? "cerrada" : fund.conv;
     const meta = STATUS_META[fund.status];
     return (
       <div className="rounded-2xl border bg-white overflow-hidden" style={{ borderColor: meta.color + "55" }}>
@@ -696,11 +800,11 @@ export default function RutaFondos() {
                   <Chip color={PALETTE.green}>No se devuelve</Chip>
                 )}
               </div>
-              {fund.conv && CONV_META[fund.conv] && (
+              {conv && CONV_META[conv] && (
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[10px]" style={{ color: CONV_META[fund.conv].color }}>{CONV_META[fund.conv].dot}</span>
-                  <span className="text-xs font-bold" style={{ color: CONV_META[fund.conv].color }}>
-                    {CONV_META[fund.conv].label}
+                  <span className="text-[10px]" style={{ color: CONV_META[conv].color }}>{CONV_META[conv].dot}</span>
+                  <span className="text-xs font-bold" style={{ color: CONV_META[conv].color }}>
+                    {CONV_META[conv].label}
                   </span>
                 </div>
               )}
@@ -757,7 +861,7 @@ export default function RutaFondos() {
               href={fund.url}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); trackClicFondo(fund); }}
               className="inline-flex items-center gap-1 text-sm font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform"
               style={{ backgroundColor: PALETTE.coral, color: "white" }}
             >
@@ -838,7 +942,7 @@ export default function RutaFondos() {
             </div>
 
             <button
-              onClick={() => setStep(0)}
+              onClick={() => { trackInicio(); setStep(0); }}
               className="w-full py-4 rounded-2xl text-white font-bold text-base active:scale-95 transition-transform"
               style={{ backgroundColor: PALETTE.coral }}
             >
@@ -978,7 +1082,7 @@ export default function RutaFondos() {
             </section>
 
             <div className="rounded-2xl px-4 py-3 text-xs text-gray-500" style={{ backgroundColor: "#EDEBE6" }}>
-              <strong>Última verificación de convocatorias: {VERSION.fecha} ({VERSION.label}).</strong> Montos, fechas y requisitos cambian por convocatoria y región y cambian por convocatoria y región. Antes de postular, revisa siempre las bases oficiales en el link de cada fondo. Postular es gratis: desconfía de quien cobre por "gestionar" tu postulación ante instituciones públicas. Esta herramienta orienta, no adjudica.
+              <strong>Última verificación de convocatorias: {VERSION.fecha} ({VERSION.label}).</strong> Montos, fechas y requisitos cambian por convocatoria y región. Antes de postular, revisa siempre las bases oficiales en el link de cada fondo. Postular es gratis: desconfía de quien cobre por "gestionar" tu postulación ante instituciones públicas. Esta herramienta orienta, no adjudica.
             </div>
 
             <button
