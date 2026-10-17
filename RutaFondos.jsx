@@ -759,7 +759,7 @@ export default function RutaFondos() {
     });
   }
 
-  // Envío a GA4 al completar el diagnóstico (una sola vez por sesión)
+  // Envío a GA4 al completar el diagnóstico (una sola vez por diagnóstico)
   useEffect(() => {
     if (done && !isMinor && !enviado.current) {
       trackCompletado(answers, results);
