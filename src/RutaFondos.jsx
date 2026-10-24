@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { track, trackInicio, trackRespuesta, trackMenor, trackCompletado, trackClicFondo } from "./analytics";
 
 // ─────────────────────────────────────────────────────────────
-// RutaFondos v4.6 — Orientador de financiamiento · Chile 2026
+// RutaFondos v4.7 — Orientador de financiamiento · Chile 2026
 // Segmentación fina: etapa, sector, perfil, ventas, edad, deudas
 // Motor de elegibilidad determinista (mismo ADN que AccesoJusto)
 // ─────────────────────────────────────────────────────────────
@@ -25,9 +25,9 @@ const PALETTE = {
 // ── Versión y curaduría ──────────────────────────────────────
 // Actualiza estos dos valores cada vez que cambies la base de fondos.
 const VERSION = {
-  label: "v4.6",
+  label: "v4.7",
   fecha: "17 de octubre de 2026",
-  nota: "v4.6: formulario de feedback (Google Forms) al final de los resultados · v4.5: portada de borde a borde con ejemplo de resultado · v4.4: diseño adaptado a computador y celular + filtro de resultados por estado · v4.3: contraste, banner piloto, teal · Revisión 17-10-2026 · Correcciones de motor y montos (Emprendamos Semilla, Startup Ciencia, Fondo Crece, Impulso Chileno) + Digitaliza tu Almacén, Impulso Mujer y Crece Sostenible + líneas Mujeres de Corfo",
+  nota: "v4.7: link al formulario en el banner de resultados · v4.6: formulario de feedback (Google Forms) al final de los resultados · v4.5: portada de borde a borde con ejemplo de resultado · v4.4: diseño adaptado a computador y celular + filtro de resultados por estado · v4.3: contraste, banner piloto, teal · Revisión 17-10-2026 · Correcciones de motor y montos (Emprendamos Semilla, Startup Ciencia, Fondo Crece, Impulso Chileno) + Digitaliza tu Almacén, Impulso Mujer y Crece Sostenible + líneas Mujeres de Corfo",
 };
 
 // ── Formulario de feedback (Google Forms, anónimo) ───────────
@@ -927,7 +927,25 @@ export default function RutaFondos() {
         <div className="max-w-[992px] mx-auto px-4 py-2.5 flex gap-2 text-sm leading-snug" style={{ color: PALETTE.ink }}>
           <span aria-hidden="true">🔬</span>
           <p>
-            <strong style={{ color: PALETTE.tealText }}>Estamos validando.</strong> Tu feedback nos ayuda a mejorar.{" "}
+            <strong style={{ color: PALETTE.tealText }}>Estamos validando.</strong>{" "}
+            {done && !isMinor ? (
+              <>
+                ¿Te sirvió?{" "}
+                <a
+                  href={FEEDBACK_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => track("clic_feedback", { origen: "banner_resultados" })}
+                  className="font-bold underline underline-offset-2"
+                  style={{ color: PALETTE.tealText }}
+                >
+                  Déjanos tu opinión en 1 minuto ↗
+                </a>
+                .{" "}
+              </>
+            ) : (
+              <>Tu feedback nos ayuda a mejorar.{" "}</>
+            )}
             <span style={{ color: PALETTE.ink2 }}>Verifica siempre las bases oficiales antes de postular.</span>
           </p>
         </div>
