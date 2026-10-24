@@ -2,27 +2,32 @@ import { useState, useEffect, useRef } from "react";
 import { trackInicio, trackRespuesta, trackMenor, trackCompletado, trackClicFondo } from "./analytics";
 
 // ─────────────────────────────────────────────────────────────
-// RutaFondos v4.2 — Orientador de financiamiento · Chile 2026
+// RutaFondos v4.3 — Orientador de financiamiento · Chile 2026
 // Segmentación fina: etapa, sector, perfil, ventas, edad, deudas
 // Motor de elegibilidad determinista (mismo ADN que AccesoJusto)
 // ─────────────────────────────────────────────────────────────
 
 const PALETTE = {
   ink: "#1E2430",
-  coral: "#E8543F",
-  amber: "#F2A61D",
-  green: "#2E8B57",
-  paper: "#F6F5F2",
-  gray: "#8A93A6",
-  purple: "#7A4FBF",
+  ink2: "#3F4654",       // texto secundario (alto contraste)
+  coral: "#E8543F",      // botones y rellenos
+  coralText: "#B93A27",  // coral para texto chico sobre blanco
+  teal: "#14B8A6",       // rellenos y bordes (reemplaza al ámbar)
+  tealText: "#0F766E",   // teal para texto sobre blanco
+  tealOnDark: "#5EEAD4", // teal para texto sobre fondo oscuro
+  step: "#C2410C",       // estado "te falta un paso" (naranjo, no amarillo)
+  green: "#1E7A47",
+  paper: "#ECEAE4",      // fondo de página: más oscuro que las tarjetas
+  line: "#D4D0C7",       // bordes visibles
+  gray: "#5B6271",
 };
 
 // ── Versión y curaduría ──────────────────────────────────────
 // Actualiza estos dos valores cada vez que cambies la base de fondos.
 const VERSION = {
-  label: "v4.2",
-  fecha: "16 de octubre de 2026",
-  nota: "Correcciones de motor y montos (Emprendamos Semilla, Startup Ciencia, Fondo Crece, Impulso Chileno) + Digitaliza tu Almacén, Impulso Mujer y Crece Sostenible + líneas Mujeres de Corfo",
+  label: "v4.3",
+  fecha: "17 de octubre de 2026",
+  nota: "Rediseño visual v4.3 (contraste, banner piloto, teal) · Revisión 17-10-2026 · Correcciones de motor y montos (Emprendamos Semilla, Startup Ciencia, Fondo Crece, Impulso Chileno) + Digitaliza tu Almacén, Impulso Mujer y Crece Sostenible + líneas Mujeres de Corfo",
 };
 
 // ── Preguntas del motor ──────────────────────────────────────
@@ -625,8 +630,9 @@ const FUNDS = [
     amount: "Más de $200 millones en premios (hasta $25M por línea)",
     refundable: false,
     conv: "abierta",
+    cierre: "2026-10-18",
     url: "https://sitiospublicos.bancochile.cl/desafio-emprendedor",
-    calendar: "11ª edición: postulaciones del 10 de septiembre al 18 de octubre de 2026 en bancochile.cl. ¡Cierra el 18 de octubre!",
+    calendar: "11ª edición: postulaciones del 10 de septiembre al 18 de octubre de 2026 en bancochile.cl. Es anual: la próxima debería abrir en septiembre de 2027.",
     what: "Uno de los concursos privados más masivos de Chile. Tres líneas: Pyme Local, Pyme Global y Startup (nueva). Primer lugar $25 millones por línea, más formación y visibilidad. Incluye la mención Emprendedor Silver ($5 millones) para el finalista mejor evaluado mayor de 50 años.",
     reqs: ["Empresa formalizada ante el SII al momento de postular (persona natural con giro o persona jurídica)", "Ventas anuales menores o iguales a 25.000 UF, o sin ventas a la fecha", "Postulación online y gratuita"],
     route: [
@@ -706,15 +712,15 @@ const ALWAYS_RESOURCES = [
 // ── Estado de la convocatoria (curaduría verificada) ─────────
 const CONV_META = {
   abierta: { label: "Convocatoria abierta", color: PALETTE.green, dot: "●" },
-  proxima: { label: "Próxima a abrir", color: PALETTE.amber, dot: "◔" },
-  permanente: { label: "Disponible todo el año", color: "#5B8DB8", dot: "◆" },
+  proxima: { label: "Próxima a abrir", color: PALETTE.tealText, dot: "◔" },
+  permanente: { label: "Disponible todo el año", color: "#2F5F8A", dot: "◆" },
   sin_fecha: { label: "Sin fecha anunciada", color: PALETTE.gray, dot: "○" },
   cerrada: { label: "Convocatoria cerrada", color: PALETTE.gray, dot: "○" },
 };
 
 const STATUS_META = {
   hoy: { title: "Puedes postular", color: PALETTE.green, icon: "✓", desc: "Cumples los requisitos — revisa en el calendario si la convocatoria está abierta." },
-  paso: { title: "Te falta un paso", color: PALETTE.amber, icon: "→", desc: "Estás cerca: resuelve lo pendiente y quedas habilitado/a." },
+  paso: { title: "Te falta un paso", color: PALETTE.step, icon: "→", desc: "Estás cerca: resuelve lo pendiente y quedas habilitado/a." },
   despues: { title: "Se desbloquean más adelante", color: PALETTE.gray, icon: "◷", desc: "Tu ruta natural de crecimiento: así se ve tu siguiente etapa." },
 };
 
@@ -783,14 +789,15 @@ export default function RutaFondos() {
 
   const FundCard = ({ fund }) => {
     const open = openCard === fund.id;
+    const conv = fund.cierre && new Date() > new Date(fund.cierre + "T23:59:59") ? "cerrada" : fund.conv;
     const meta = STATUS_META[fund.status];
     return (
-      <div className="rounded-2xl border bg-white overflow-hidden" style={{ borderColor: meta.color + "55" }}>
+      <div className="rounded-2xl border bg-white overflow-hidden shadow-sm" style={{ borderColor: PALETTE.line, borderLeft: `5px solid ${meta.color}` }}>
         <button onClick={() => setOpenCard(open ? null : fund.id)} className="w-full text-left p-4">
           <div className="flex items-start justify-between gap-2">
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <Chip color={fund.type === "privado" ? PALETTE.purple : PALETTE.coral}>{fund.inst}</Chip>
+                <Chip color={fund.type === "privado" ? PALETTE.tealText : PALETTE.coralText}>{fund.inst}</Chip>
                 <Chip color={PALETTE.gray}>{fund.type === "privado" ? "Privado" : "Público"}</Chip>
                 {fund.refundable ? (
                   <Chip color={PALETTE.gray}>Se paga (crédito)</Chip>
@@ -798,16 +805,16 @@ export default function RutaFondos() {
                   <Chip color={PALETTE.green}>No se devuelve</Chip>
                 )}
               </div>
-              {fund.conv && CONV_META[fund.conv] && (
+              {conv && CONV_META[conv] && (
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[10px]" style={{ color: CONV_META[fund.conv].color }}>{CONV_META[fund.conv].dot}</span>
-                  <span className="text-xs font-bold" style={{ color: CONV_META[fund.conv].color }}>
-                    {CONV_META[fund.conv].label}
+                  <span className="text-[10px]" style={{ color: CONV_META[conv].color }}>{CONV_META[conv].dot}</span>
+                  <span className="text-xs font-bold" style={{ color: CONV_META[conv].color }}>
+                    {CONV_META[conv].label}
                   </span>
                 </div>
               )}
               <h3 className="font-bold text-base" style={{ color: PALETTE.ink }}>{fund.name}</h3>
-              <p className="text-sm font-semibold mt-0.5" style={{ color: meta.color }}>{fund.amount}</p>
+              <p className="text-sm font-bold mt-0.5" style={{ color: PALETTE.ink }}>{fund.amount}</p>
             </div>
             <span
               className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold transition-transform"
@@ -817,11 +824,11 @@ export default function RutaFondos() {
             </span>
           </div>
           {fund.pending && (
-            <p className="mt-2 text-sm rounded-xl px-3 py-2" style={{ backgroundColor: PALETTE.amber + "15", color: "#8A6210" }}>
+            <p className="mt-2 text-sm rounded-xl px-3 py-2" style={{ backgroundColor: "#FFEDD5", color: "#9A3412" }}>
               <strong>Pendiente:</strong> {fund.pending}
             </p>
           )}
-          {fund.unlock && <p className="mt-2 text-sm text-gray-500">{fund.unlock}</p>}
+          {fund.unlock && <p className="mt-2 text-sm text-gray-600">{fund.unlock}</p>}
         </button>
 
         {open && (
@@ -833,7 +840,7 @@ export default function RutaFondos() {
               <ul className="space-y-1">
                 {fund.reqs.map((r, i) => (
                   <li key={i} className="flex gap-2">
-                    <span style={{ color: PALETTE.coral }}>•</span>
+                    <span style={{ color: PALETTE.coralText }}>•</span>
                     <span className="text-gray-600">{r}</span>
                   </li>
                 ))}
@@ -881,7 +888,7 @@ export default function RutaFondos() {
           <div className="flex items-center gap-2">
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-lg"
-              style={{ background: `linear-gradient(135deg, ${PALETTE.coral}, ${PALETTE.amber})` }}
+              style={{ background: `linear-gradient(135deg, ${PALETTE.coral}, ${PALETTE.teal})` }}
             >
               R
             </div>
@@ -890,65 +897,91 @@ export default function RutaFondos() {
                 <h1 className="font-black leading-none text-lg tracking-tight" style={{ color: PALETTE.ink }}>RutaFondos</h1>
                 <span
                   className="text-[10px] font-bold px-1.5 py-0.5 rounded-md leading-none"
-                  style={{ backgroundColor: PALETTE.ink + "0F", color: PALETTE.gray }}
+                  style={{ backgroundColor: "#FFFFFF", color: PALETTE.ink2, border: `1px solid ${PALETTE.line}` }}
                   title={`Actualizado el ${VERSION.fecha}`}
                 >
                   {VERSION.label}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 leading-none mt-1">Financiamiento público y privado · Chile</p>
+              <p className="text-xs text-gray-600 leading-none mt-1">Financiamiento público y privado · Chile</p>
             </div>
           </div>
           {step >= 0 && (
-            <button onClick={restart} className="text-xs font-semibold text-gray-400 hover:text-gray-600">Reiniciar</button>
+            <button onClick={restart} className="text-xs font-semibold text-gray-600 hover:text-gray-600">Reiniciar</button>
           )}
         </header>
 
+        {/* Banner piloto */}
+        <div
+          className="flex gap-2.5 items-start rounded-xl px-3.5 py-3 mb-5 text-sm leading-snug"
+          style={{ backgroundColor: "#E0F5F2", border: "1px solid #A7E3DA", borderLeft: `4px solid ${PALETTE.teal}`, color: PALETTE.ink }}
+          role="note"
+        >
+          <span aria-hidden="true">🔬</span>
+          <div>
+            <strong style={{ color: PALETTE.tealText }}>Estamos validando.</strong> Tu feedback nos ayuda a mejorar.
+            <span className="block text-[13px] mt-0.5" style={{ color: PALETTE.ink2 }}>Verifica siempre las bases oficiales antes de postular.</span>
+          </div>
+        </div>
+
         {/* Portada */}
         {step === -1 && (
-          <div className="space-y-5">
-            <div className="rounded-3xl p-6 text-white" style={{ background: `linear-gradient(150deg, ${PALETTE.ink} 55%, #2B3446)` }}>
-              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: PALETTE.amber }}>
+          <div className="space-y-4">
+            <div className="rounded-3xl p-6 text-white shadow-sm" style={{ background: `linear-gradient(155deg, ${PALETTE.ink} 55%, #2B3446)` }}>
+              <p className="text-xs font-extrabold uppercase tracking-widest mb-2.5" style={{ color: PALETTE.tealOnDark }}>
                 Orientador de fondos concursables
               </p>
               <h2 className="text-2xl font-black leading-tight mb-3">
-                Hay fondos públicos y privados para tu proyecto. El problema es saber cuál te corresponde.
+                Hay fondos para tu proyecto. El problema es saber <span style={{ color: "#FF8A75" }}>cuál te corresponde</span>.
               </h2>
-              <p className="text-sm text-gray-300">
-                Responde unas breves preguntas sobre tu etapa, rubro y perfil, y te mostramos <strong className="text-white">qué fondos calzan contigo</strong>, cuáles con <strong className="text-white">un paso más</strong>, y cuáles se desbloquean en tu siguiente etapa — con links oficiales y fechas de convocatoria.
+              <p className="text-[15px] leading-relaxed" style={{ color: "#E3E6EC" }}>
+                Responde unas preguntas y te mostramos <strong className="text-white">qué fondos calzan contigo</strong>, cuáles necesitan <strong className="text-white">un paso más</strong> y cuáles se desbloquean en tu siguiente etapa, con links oficiales y fechas de convocatoria.
               </p>
             </div>
 
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: PALETTE.gray }}>
-                Instituciones que cubrimos
-              </p>
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {["Sercotec", "Corfo", "FOSIS", "PRODEMU", "INDAP", "ANID", "Fondart", "FOGAPE"].map((inst) => (
-                  <span key={inst} className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: PALETTE.coral + "1A", color: PALETTE.coral }}>
-                    {inst}
-                  </span>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {["F. Luksic", "Banco de Chile", "Abastible", "ChileConverge", "Jump Chile · UC"].map((inst) => (
-                  <span key={inst} className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: PALETTE.purple + "1A", color: PALETTE.purple }}>
-                    {inst}
-                  </span>
-                ))}
-              </div>
+            <div className="grid grid-cols-3 bg-white rounded-2xl border shadow-sm" style={{ borderColor: PALETTE.line }}>
+              {[["19+", "Fondos"], ["✓", "Diagnóstico personalizado"], ["✓", "Sin registro"]].map(([n, l], i) => (
+                <div key={l} className="py-3.5 px-2 text-center" style={i > 0 ? { borderLeft: `1px solid ${PALETTE.line}` } : {}}>
+                  <div className="text-2xl font-black leading-tight" style={{ color: PALETTE.coral }}>{n}</div>
+                  <div className="text-xs font-bold mt-1 leading-tight" style={{ color: PALETTE.ink2 }}>{l}</div>
+                </div>
+              ))}
             </div>
 
             <button
               onClick={() => { trackInicio(); setStep(0); }}
-              className="w-full py-4 rounded-2xl text-white font-bold text-base active:scale-95 transition-transform"
-              style={{ backgroundColor: PALETTE.coral }}
+              className="w-full py-4 rounded-2xl text-white font-extrabold text-lg active:scale-95 transition-transform"
+              style={{ backgroundColor: PALETTE.coral, boxShadow: "0 4px 14px rgba(232,84,63,.35)" }}
             >
               Encontrar mi fondo →
             </button>
-            <p className="text-xs text-center text-gray-400">
-              Gratis · Sin registro · Convocatorias verificadas al {VERSION.fecha}
+            <p className="text-[13px] text-center" style={{ color: PALETTE.gray }}>
+              Gratis · Convocatorias revisadas al {VERSION.fecha}
             </p>
+
+            <div className="bg-white rounded-2xl border p-4 shadow-sm" style={{ borderColor: PALETTE.line }}>
+              <p className="text-xs font-extrabold uppercase tracking-widest mb-3" style={{ color: PALETTE.ink2 }}>
+                Instituciones que cubrimos
+              </p>
+              <p className="text-[13px] font-extrabold mb-2" style={{ color: PALETTE.coralText }}>Fondos públicos</p>
+              <div className="flex flex-wrap gap-1.5 mb-3.5">
+                {["Sercotec", "Corfo", "FOSIS", "PRODEMU", "INDAP", "ANID", "Fondart", "FOGAPE"].map((inst) => (
+                  <span key={inst} className="text-[13px] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#FCE9E5", color: PALETTE.coralText, border: "1px solid #F3B8AC" }}>
+                    {inst}
+                  </span>
+                ))}
+              </div>
+              <div className="pt-3.5" style={{ borderTop: `1px dashed ${PALETTE.line}` }}>
+                <p className="text-[13px] font-extrabold mb-2" style={{ color: PALETTE.tealText }}>Fondos privados</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {["Abastible", "Banco de Chile", "Fundación Luksic", "ChileConverge", "Jump Chile · UC"].map((inst) => (
+                    <span key={inst} className="text-[13px] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#E0F5F2", color: PALETTE.tealText, border: "1px solid #A7E3DA" }}>
+                      {inst}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -980,9 +1013,12 @@ export default function RutaFondos() {
           <div className="space-y-5">
             <div className="flex gap-1.5">
               {visibleQuestions.map((q, i) => (
-                <div key={q.id} className="h-1.5 flex-1 rounded-full transition-colors" style={{ backgroundColor: i <= step ? PALETTE.coral : "#E3E1DC" }} />
+                <div key={q.id} className="h-1.5 flex-1 rounded-full transition-colors" style={{ backgroundColor: i <= step ? PALETTE.coral : PALETTE.line }} />
               ))}
             </div>
+            <p className="text-[13px] font-semibold -mt-3" style={{ color: PALETTE.gray }}>
+              Pregunta {step + 1} de {visibleQuestions.length}
+            </p>
 
             {(() => {
               const q = visibleQuestions[step];
@@ -990,24 +1026,25 @@ export default function RutaFondos() {
               return (
                 <div className="space-y-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: PALETTE.amber }}>{q.label}</p>
+                    <p className="text-xs font-extrabold uppercase tracking-widest mb-1" style={{ color: PALETTE.tealText }}>{q.label}</p>
                     <h2 className="text-xl font-black leading-snug" style={{ color: PALETTE.ink }}>{q.text}</h2>
-                    {q.help && <p className="text-sm text-gray-500 mt-2">{q.help}</p>}
+                    {q.help && <p className="text-[15px] leading-relaxed mt-2" style={{ color: PALETTE.ink2 }}>{q.help}</p>}
                   </div>
                   <div className="space-y-2">
                     {q.options.map((o) => (
                       <button
                         key={o.value}
                         onClick={() => answer(q.id, o.value)}
-                        className="w-full text-left bg-white rounded-2xl px-4 py-3.5 border border-gray-200 active:scale-95 transition-transform hover:border-gray-400"
+                        className="w-full text-left bg-white rounded-2xl px-4 py-3.5 border-2 shadow-sm active:scale-95 transition hover:border-teal-500"
+                        style={{ borderColor: PALETTE.line }}
                       >
-                        <p className="font-semibold text-sm" style={{ color: PALETTE.ink }}>{o.label}</p>
-                        {o.sub && <p className="text-xs text-gray-500 mt-0.5">{o.sub}</p>}
+                        <p className="font-bold text-[15px]" style={{ color: PALETTE.ink }}>{o.label}</p>
+                        {o.sub && <p className="text-[13px] mt-0.5" style={{ color: PALETTE.gray }}>{o.sub}</p>}
                       </button>
                     ))}
                   </div>
                   {step > 0 && (
-                    <button onClick={() => setStep(step - 1)} className="text-sm font-semibold text-gray-400">← Pregunta anterior</button>
+                    <button onClick={() => setStep(step - 1)} className="text-sm font-bold" style={{ color: PALETTE.ink2 }}>← Pregunta anterior</button>
                   )}
                 </div>
               );
@@ -1020,9 +1057,22 @@ export default function RutaFondos() {
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-black" style={{ color: PALETTE.ink }}>Tu ruta de financiamiento</h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-600 mt-1">
                 Resultado personalizado según tu etapa, rubro, perfil y situación. Toca cada tarjeta para ver fechas, requisitos, ruta de postulación y el link oficial.
               </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                ["hoy", "Puedes postular", "#DCFCE7", "#166534", "#A6E3BC"],
+                ["paso", "Te falta un paso", "#FFEDD5", "#9A3412", "#F7C79F"],
+                ["despues", "Se desbloquea más adelante", "#E2E8F0", "#334155", "#C3CCD8"],
+              ].map(([k, l, bg, fg, bd]) => (
+                <div key={k} className="rounded-xl px-2.5 py-3 border" style={{ backgroundColor: bg, color: fg, borderColor: bd }}>
+                  <div className="text-2xl font-black leading-none">{results[k].length}</div>
+                  <div className="text-xs font-bold mt-1 leading-tight">{l}</div>
+                </div>
+              ))}
             </div>
 
             {["hoy", "paso", "despues"].map((key) => {
@@ -1036,8 +1086,8 @@ export default function RutaFondos() {
                       {meta.icon}
                     </span>
                     <div>
-                      <h3 className="font-bold text-sm leading-none" style={{ color: PALETTE.ink }}>{meta.title}</h3>
-                      <p className="text-xs text-gray-400 leading-none mt-1">{meta.desc}</p>
+                      <h3 className="font-extrabold text-base leading-none" style={{ color: PALETTE.ink }}>{meta.title}</h3>
+                      <p className="text-[13px] leading-snug mt-1" style={{ color: PALETTE.gray }}>{meta.desc}</p>
                     </div>
                   </div>
                   <div className="space-y-2.5">
@@ -1057,36 +1107,36 @@ export default function RutaFondos() {
             <section className="space-y-2">
               <h3 className="font-bold text-sm" style={{ color: PALETTE.ink }}>Recursos para seguir explorando</h3>
               {ALWAYS_RESOURCES.map((p) => (
-                <div key={p.name} className="bg-white rounded-2xl px-4 py-3 border border-gray-100">
+                <div key={p.name} className="bg-white rounded-2xl px-4 py-3 border shadow-sm" style={{ borderColor: PALETTE.line }}>
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="font-semibold text-sm" style={{ color: PALETTE.ink }}>{p.name}</p>
-                      <p className="text-xs font-semibold" style={{ color: PALETTE.coral }}>{p.inst}</p>
+                      <p className="text-xs font-bold" style={{ color: PALETTE.coralText }}>{p.inst}</p>
                     </div>
                     <a
                       href={p.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="shrink-0 text-xs font-bold px-2.5 py-1.5 rounded-lg"
-                      style={{ backgroundColor: PALETTE.coral + "12", color: PALETTE.coral }}
+                      style={{ backgroundColor: "#FCE9E5", color: PALETTE.coralText }}
                     >
                       Ver ↗
                     </a>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">{p.note}</p>
-                  <p className="text-xs text-gray-400 mt-1">🗓️ {p.calendar}</p>
+                  <p className="text-xs text-gray-600 mt-1">{p.note}</p>
+                  <p className="text-xs text-gray-600 mt-1">🗓️ {p.calendar}</p>
                 </div>
               ))}
             </section>
 
-            <div className="rounded-2xl px-4 py-3 text-xs text-gray-500" style={{ backgroundColor: "#EDEBE6" }}>
-              <strong>Última verificación de convocatorias: {VERSION.fecha} ({VERSION.label}).</strong> Montos, fechas y requisitos cambian por convocatoria y región. Antes de postular, revisa siempre las bases oficiales en el link de cada fondo. Postular es gratis: desconfía de quien cobre por "gestionar" tu postulación ante instituciones públicas. Esta herramienta orienta, no adjudica.
+            <div className="rounded-2xl px-4 py-3 text-xs bg-white border" style={{ borderColor: PALETTE.line, color: PALETTE.ink2 }}>
+              <strong>Última revisión de convocatorias: {VERSION.fecha} ({VERSION.label}).</strong> Montos, fechas y requisitos cambian por convocatoria y región. Antes de postular, revisa siempre las bases oficiales en el link de cada fondo. Postular es gratis: desconfía de quien cobre por "gestionar" tu postulación ante instituciones públicas. Esta herramienta orienta, no adjudica.
             </div>
 
             <button
               onClick={restart}
               className="w-full py-3.5 rounded-2xl font-bold text-sm border-2 active:scale-95 transition-transform"
-              style={{ borderColor: PALETTE.coral, color: PALETTE.coral }}
+              style={{ borderColor: PALETTE.coral, color: PALETTE.coralText, backgroundColor: "#FFFFFF" }}
             >
               Hacer el diagnóstico de nuevo
             </button>
