@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { track, trackInicio, trackRespuesta, trackMenor, trackCompletado, trackClicFondo } from "./analytics";
 
 // ─────────────────────────────────────────────────────────────
-// RutaFondos v4.5 — Orientador de financiamiento · Chile 2026
+// RutaFondos v4.6 — Orientador de financiamiento · Chile 2026
 // Segmentación fina: etapa, sector, perfil, ventas, edad, deudas
 // Motor de elegibilidad determinista (mismo ADN que AccesoJusto)
 // ─────────────────────────────────────────────────────────────
@@ -25,10 +25,13 @@ const PALETTE = {
 // ── Versión y curaduría ──────────────────────────────────────
 // Actualiza estos dos valores cada vez que cambies la base de fondos.
 const VERSION = {
-  label: "v4.5",
+  label: "v4.6",
   fecha: "17 de octubre de 2026",
-  nota: "v4.5: portada de borde a borde con ejemplo de resultado · v4.4: diseño adaptado a computador y celular + filtro de resultados por estado · v4.3: contraste, banner piloto, teal · Revisión 17-10-2026 · Correcciones de motor y montos (Emprendamos Semilla, Startup Ciencia, Fondo Crece, Impulso Chileno) + Digitaliza tu Almacén, Impulso Mujer y Crece Sostenible + líneas Mujeres de Corfo",
+  nota: "v4.6: formulario de feedback (Google Forms) al final de los resultados · v4.5: portada de borde a borde con ejemplo de resultado · v4.4: diseño adaptado a computador y celular + filtro de resultados por estado · v4.3: contraste, banner piloto, teal · Revisión 17-10-2026 · Correcciones de motor y montos (Emprendamos Semilla, Startup Ciencia, Fondo Crece, Impulso Chileno) + Digitaliza tu Almacén, Impulso Mujer y Crece Sostenible + líneas Mujeres de Corfo",
 };
+
+// ── Formulario de feedback (Google Forms, anónimo) ───────────
+const FEEDBACK_URL = "https://forms.gle/TLLqHhCRcfsrVHA16";
 
 // ── Preguntas del motor ──────────────────────────────────────
 const QUESTIONS = [
@@ -1170,6 +1173,29 @@ export default function RutaFondos() {
                 Con tus respuestas actuales no hay fondos disponibles de inmediato, pero revisa los que se desbloquean más adelante: ahí está tu ruta de crecimiento.
               </div>
             )}
+
+            {/* Feedback */}
+            <div
+              className="bg-white rounded-2xl border p-5 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4"
+              style={{ borderColor: PALETTE.line, borderLeft: `5px solid ${PALETTE.teal}` }}
+            >
+              <div className="flex-1">
+                <h3 className="font-black text-lg leading-tight" style={{ color: PALETTE.ink }}>¿Te sirvió tu diagnóstico?</h3>
+                <p className="text-sm mt-1 leading-snug" style={{ color: PALETTE.ink2 }}>
+                  Cuéntanos en 1 minuto. Es anónimo y nos ayuda a mejorar RutaFondos.
+                </p>
+              </div>
+              <a
+                href={FEEDBACK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => track("clic_feedback", { origen: "resultados" })}
+                className="shrink-0 text-center text-[15px] font-extrabold px-5 py-3 rounded-xl text-white active:scale-95 transition-transform"
+                style={{ backgroundColor: PALETTE.tealText }}
+              >
+                Dar mi opinión ↗
+              </a>
+            </div>
 
             {/* Recursos transversales */}
             <section className="space-y-2">
