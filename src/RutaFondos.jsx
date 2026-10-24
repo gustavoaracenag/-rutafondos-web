@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { trackInicio, trackRespuesta, trackMenor, trackCompletado, trackClicFondo } from "./analytics";
+import { track, trackInicio, trackRespuesta, trackMenor, trackCompletado, trackClicFondo } from "./analytics";
 
 // ─────────────────────────────────────────────────────────────
-// RutaFondos v4.3 — Orientador de financiamiento · Chile 2026
+// RutaFondos v4.4 — Orientador de financiamiento · Chile 2026
 // Segmentación fina: etapa, sector, perfil, ventas, edad, deudas
 // Motor de elegibilidad determinista (mismo ADN que AccesoJusto)
 // ─────────────────────────────────────────────────────────────
@@ -25,9 +25,9 @@ const PALETTE = {
 // ── Versión y curaduría ──────────────────────────────────────
 // Actualiza estos dos valores cada vez que cambies la base de fondos.
 const VERSION = {
-  label: "v4.3",
+  label: "v4.4",
   fecha: "17 de octubre de 2026",
-  nota: "Rediseño visual v4.3 (contraste, banner piloto, teal) · Revisión 17-10-2026 · Correcciones de motor y montos (Emprendamos Semilla, Startup Ciencia, Fondo Crece, Impulso Chileno) + Digitaliza tu Almacén, Impulso Mujer y Crece Sostenible + líneas Mujeres de Corfo",
+  nota: "v4.4: diseño adaptado a computador y celular + filtro de resultados por estado · v4.3: contraste, banner piloto, teal · Revisión 17-10-2026 · Correcciones de motor y montos (Emprendamos Semilla, Startup Ciencia, Fondo Crece, Impulso Chileno) + Digitaliza tu Almacén, Impulso Mujer y Crece Sostenible + líneas Mujeres de Corfo",
 };
 
 // ── Preguntas del motor ──────────────────────────────────────
@@ -729,6 +729,7 @@ export default function RutaFondos() {
   const [answers, setAnswers] = useState({});
   const [step, setStep] = useState(-1); // -1 = portada
   const [openCard, setOpenCard] = useState(null);
+  const [filtro, setFiltro] = useState("todos"); // filtro de resultados por estado
   const enviado = useRef(false);
 
   const visibleQuestions = QUESTIONS.filter((q) => !q.showIf || q.showIf(answers));
@@ -753,6 +754,7 @@ export default function RutaFondos() {
     setAnswers({});
     setStep(-1);
     setOpenCard(null);
+    setFiltro("todos");
     enviado.current = false;
   };
 
@@ -881,13 +883,12 @@ export default function RutaFondos() {
   // ── Pantallas ──
   return (
     <div className="min-h-screen" style={{ backgroundColor: PALETTE.paper, fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
-      <div className="max-w-lg mx-auto px-4 py-6">
-
-        {/* Header */}
-        <header className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
+      {/* Header (borde a borde) */}
+      <header className="bg-white border-b" style={{ borderColor: PALETTE.line }}>
+        <div className="max-w-[992px] mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-lg"
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-lg"
               style={{ background: `linear-gradient(135deg, ${PALETTE.coral}, ${PALETTE.teal})` }}
             >
               R
@@ -903,43 +904,49 @@ export default function RutaFondos() {
                   {VERSION.label}
                 </span>
               </div>
-              <p className="text-xs text-gray-600 leading-none mt-1">Financiamiento público y privado · Chile</p>
+              <p className="text-xs leading-none mt-1" style={{ color: PALETTE.gray }}>Financiamiento público y privado · Chile</p>
             </div>
           </div>
           {step >= 0 && (
-            <button onClick={restart} className="text-xs font-semibold text-gray-600 hover:text-gray-600">Reiniciar</button>
+            <button
+              onClick={restart}
+              className="text-[13px] font-bold px-3 py-2 rounded-xl border bg-white hover:bg-gray-50"
+              style={{ borderColor: PALETTE.line, color: PALETTE.ink2 }}
+            >
+              Reiniciar
+            </button>
           )}
-        </header>
-
-        {/* Banner piloto */}
-        <div
-          className="flex gap-2.5 items-start rounded-xl px-3.5 py-3 mb-5 text-sm leading-snug"
-          style={{ backgroundColor: "#E0F5F2", border: "1px solid #A7E3DA", borderLeft: `4px solid ${PALETTE.teal}`, color: PALETTE.ink }}
-          role="note"
-        >
-          <span aria-hidden="true">🔬</span>
-          <div>
-            <strong style={{ color: PALETTE.tealText }}>Estamos validando.</strong> Tu feedback nos ayuda a mejorar.
-            <span className="block text-[13px] mt-0.5" style={{ color: PALETTE.ink2 }}>Verifica siempre las bases oficiales antes de postular.</span>
-          </div>
         </div>
+      </header>
 
+      {/* Banner piloto (borde a borde) */}
+      <div style={{ backgroundColor: "#E0F5F2", borderBottom: `2px solid ${PALETTE.teal}` }} role="note">
+        <div className="max-w-[992px] mx-auto px-4 py-2.5 flex gap-2 text-sm leading-snug" style={{ color: PALETTE.ink }}>
+          <span aria-hidden="true">🔬</span>
+          <p>
+            <strong style={{ color: PALETTE.tealText }}>Estamos validando.</strong> Tu feedback nos ayuda a mejorar.{" "}
+            <span style={{ color: PALETTE.ink2 }}>Verifica siempre las bases oficiales antes de postular.</span>
+          </p>
+        </div>
+      </div>
+
+      <main className="px-4 pt-6 pb-12">
         {/* Portada */}
         {step === -1 && (
-          <div className="space-y-4">
-            <div className="rounded-3xl p-6 text-white shadow-sm" style={{ background: `linear-gradient(155deg, ${PALETTE.ink} 55%, #2B3446)` }}>
+          <div className="max-w-[960px] mx-auto grid gap-4 lg:grid-cols-[1.35fr_1fr] lg:gap-x-5">
+            <div className="rounded-3xl p-6 lg:p-8 text-white shadow-sm lg:col-start-1 lg:row-start-1 lg:row-span-2" style={{ background: `linear-gradient(155deg, ${PALETTE.ink} 55%, #2B3446)` }}>
               <p className="text-xs font-extrabold uppercase tracking-widest mb-2.5" style={{ color: PALETTE.tealOnDark }}>
                 Orientador de fondos concursables
               </p>
-              <h2 className="text-2xl font-black leading-tight mb-3">
+              <h2 className="text-2xl lg:text-[34px] font-black leading-tight mb-3">
                 Hay fondos para tu proyecto. El problema es saber <span style={{ color: "#FF8A75" }}>cuál te corresponde</span>.
               </h2>
-              <p className="text-[15px] leading-relaxed" style={{ color: "#E3E6EC" }}>
+              <p className="text-[15px] lg:text-base leading-relaxed" style={{ color: "#E3E6EC" }}>
                 Responde unas preguntas y te mostramos <strong className="text-white">qué fondos calzan contigo</strong>, cuáles necesitan <strong className="text-white">un paso más</strong> y cuáles se desbloquean en tu siguiente etapa, con links oficiales y fechas de convocatoria.
               </p>
             </div>
 
-            <div className="grid grid-cols-3 bg-white rounded-2xl border shadow-sm" style={{ borderColor: PALETTE.line }}>
+            <div className="grid grid-cols-3 bg-white rounded-2xl border shadow-sm self-start lg:col-start-2 lg:row-start-1" style={{ borderColor: PALETTE.line }}>
               {[["19+", "Fondos"], ["✓", "Diagnóstico personalizado"], ["✓", "Sin registro"]].map(([n, l], i) => (
                 <div key={l} className="py-3.5 px-2 text-center" style={i > 0 ? { borderLeft: `1px solid ${PALETTE.line}` } : {}}>
                   <div className="text-2xl font-black leading-tight" style={{ color: PALETTE.coral }}>{n}</div>
@@ -948,6 +955,7 @@ export default function RutaFondos() {
               ))}
             </div>
 
+            <div className="space-y-2 lg:col-start-1 lg:row-start-3">
             <button
               onClick={() => { trackInicio(); setStep(0); }}
               className="w-full py-4 rounded-2xl text-white font-extrabold text-lg active:scale-95 transition-transform"
@@ -958,8 +966,9 @@ export default function RutaFondos() {
             <p className="text-[13px] text-center" style={{ color: PALETTE.gray }}>
               Gratis · Convocatorias revisadas al {VERSION.fecha}
             </p>
+            </div>
 
-            <div className="bg-white rounded-2xl border p-4 shadow-sm" style={{ borderColor: PALETTE.line }}>
+            <div className="bg-white rounded-2xl border p-4 shadow-sm self-start lg:col-start-2 lg:row-start-2 lg:row-span-2" style={{ borderColor: PALETTE.line }}>
               <p className="text-xs font-extrabold uppercase tracking-widest mb-3" style={{ color: PALETTE.ink2 }}>
                 Instituciones que cubrimos
               </p>
@@ -987,7 +996,7 @@ export default function RutaFondos() {
 
         {/* Menor de edad */}
         {isMinor && step === 999 && (
-          <div className="bg-white rounded-3xl p-6 text-center space-y-3">
+          <div className="max-w-[770px] mx-auto bg-white rounded-3xl p-6 text-center space-y-3 border shadow-sm" style={{ borderColor: PALETTE.line }}>
             <p className="text-4xl">🌱</p>
             <h2 className="font-bold text-lg" style={{ color: PALETTE.ink }}>Aún no puedes postular directamente</h2>
             <p className="text-sm text-gray-600">
@@ -1010,7 +1019,7 @@ export default function RutaFondos() {
 
         {/* Wizard */}
         {step >= 0 && step !== 999 && !done && !isMinor && (
-          <div className="space-y-5">
+          <div className="max-w-[770px] mx-auto space-y-5">
             <div className="flex gap-1.5">
               {visibleQuestions.map((q, i) => (
                 <div key={q.id} className="h-1.5 flex-1 rounded-full transition-colors" style={{ backgroundColor: i <= step ? PALETTE.coral : PALETTE.line }} />
@@ -1053,40 +1062,67 @@ export default function RutaFondos() {
         )}
 
         {/* Resultados */}
-        {done && !isMinor && (
-          <div className="space-y-6">
+        {done && !isMinor && (() => {
+          const total = results.hoy.length + results.paso.length + results.despues.length;
+          const keys = filtro === "todos" ? ["hoy", "paso", "despues"] : [filtro];
+          const elegir = (k) => { setFiltro(k); setOpenCard(null); track("filtro_resultados", { filtro: k }); };
+          return (
+          <div className="max-w-[770px] mx-auto space-y-6">
             <div>
-              <h2 className="text-xl font-black" style={{ color: PALETTE.ink }}>Tu ruta de financiamiento</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-xs font-extrabold uppercase tracking-widest mb-1.5" style={{ color: PALETTE.tealText }}>Tu ruta de financiamiento</p>
+              <h2 className="text-2xl lg:text-[28px] font-black leading-tight" style={{ color: PALETTE.ink }}>
+                {total > 0 ? (
+                  <>Encontramos <span style={{ color: PALETTE.coralText }}>{total} {total === 1 ? "fondo" : "fondos"}</span> para tu perfil.</>
+                ) : (
+                  <>Aún no encontramos fondos para tu perfil.</>
+                )}
+              </h2>
+              <p className="text-[15px] mt-1.5 leading-relaxed" style={{ color: PALETTE.ink2 }}>
                 Resultado personalizado según tu etapa, rubro, perfil y situación. Toca cada tarjeta para ver fechas, requisitos, ruta de postulación y el link oficial.
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                ["hoy", "Puedes postular", "#DCFCE7", "#166534", "#A6E3BC"],
-                ["paso", "Te falta un paso", "#FFEDD5", "#9A3412", "#F7C79F"],
-                ["despues", "Se desbloquea más adelante", "#E2E8F0", "#334155", "#C3CCD8"],
-              ].map(([k, l, bg, fg, bd]) => (
-                <div key={k} className="rounded-xl px-2.5 py-3 border" style={{ backgroundColor: bg, color: fg, borderColor: bd }}>
-                  <div className="text-2xl font-black leading-none">{results[k].length}</div>
-                  <div className="text-xs font-bold mt-1 leading-tight">{l}</div>
-                </div>
-              ))}
-            </div>
+            {total > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto sm:flex-wrap pb-1.5 -mb-2" role="group" aria-label="Filtrar resultados">
+                <span className="text-sm font-bold shrink-0" style={{ color: PALETTE.ink2 }}>Ver:</span>
+                {[["todos", "Todos", total, null], ...["hoy", "paso", "despues"].map((k) => [k, k === "despues" ? "Se desbloquea" : STATUS_META[k].title, results[k].length, STATUS_META[k].color])].map(([k, l, n, c]) => {
+                  const activo = filtro === k;
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => elegir(k)}
+                      aria-pressed={activo}
+                      className="shrink-0 inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-full border-2 transition-colors"
+                      style={activo
+                        ? { backgroundColor: PALETTE.ink, borderColor: PALETTE.ink, color: "#FFFFFF" }
+                        : { backgroundColor: "#FFFFFF", borderColor: PALETTE.line, color: PALETTE.ink }}
+                    >
+                      {c && <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c }} />}
+                      {l} ({n})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-            {["hoy", "paso", "despues"].map((key) => {
+            {keys.map((key) => {
               const meta = STATUS_META[key];
               const list = results[key];
-              if (list.length === 0) return null;
+              if (list.length === 0) {
+                return filtro === "todos" ? null : (
+                  <div key={key} className="bg-white rounded-2xl border border-dashed p-5 text-sm" style={{ borderColor: PALETTE.line, color: PALETTE.ink2 }}>
+                    No hay fondos en este estado para tu perfil. Prueba con "Todos".
+                  </div>
+                );
+              }
               return (
                 <section key={key} className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: meta.color }}>
+                  <div className="flex items-center gap-2.5">
+                    <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: meta.color }}>
                       {meta.icon}
                     </span>
                     <div>
-                      <h3 className="font-extrabold text-base leading-none" style={{ color: PALETTE.ink }}>{meta.title}</h3>
+                      <h3 className="font-black text-lg leading-none" style={{ color: PALETTE.ink }}>{meta.title} ({list.length})</h3>
                       <p className="text-[13px] leading-snug mt-1" style={{ color: PALETTE.gray }}>{meta.desc}</p>
                     </div>
                   </div>
@@ -1097,8 +1133,8 @@ export default function RutaFondos() {
               );
             })}
 
-            {results.hoy.length === 0 && results.paso.length === 0 && (
-              <div className="bg-white rounded-3xl p-5 text-sm text-gray-600">
+            {filtro === "todos" && results.hoy.length === 0 && results.paso.length === 0 && (
+              <div className="bg-white rounded-2xl border p-5 text-sm" style={{ borderColor: PALETTE.line, color: PALETTE.ink2 }}>
                 Con tus respuestas actuales no hay fondos disponibles de inmediato, pero revisa los que se desbloquean más adelante: ahí está tu ruta de crecimiento.
               </div>
             )}
@@ -1141,8 +1177,9 @@ export default function RutaFondos() {
               Hacer el diagnóstico de nuevo
             </button>
           </div>
-        )}
-      </div>
+          );
+        })()}
+      </main>
     </div>
   );
 }
