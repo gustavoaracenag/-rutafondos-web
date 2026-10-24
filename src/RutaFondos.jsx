@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { track, trackInicio, trackRespuesta, trackMenor, trackCompletado, trackClicFondo } from "./analytics";
 
 // ─────────────────────────────────────────────────────────────
-// RutaFondos v4.4 — Orientador de financiamiento · Chile 2026
+// RutaFondos v4.5 — Orientador de financiamiento · Chile 2026
 // Segmentación fina: etapa, sector, perfil, ventas, edad, deudas
 // Motor de elegibilidad determinista (mismo ADN que AccesoJusto)
 // ─────────────────────────────────────────────────────────────
@@ -25,9 +25,9 @@ const PALETTE = {
 // ── Versión y curaduría ──────────────────────────────────────
 // Actualiza estos dos valores cada vez que cambies la base de fondos.
 const VERSION = {
-  label: "v4.4",
+  label: "v4.5",
   fecha: "17 de octubre de 2026",
-  nota: "v4.4: diseño adaptado a computador y celular + filtro de resultados por estado · v4.3: contraste, banner piloto, teal · Revisión 17-10-2026 · Correcciones de motor y montos (Emprendamos Semilla, Startup Ciencia, Fondo Crece, Impulso Chileno) + Digitaliza tu Almacén, Impulso Mujer y Crece Sostenible + líneas Mujeres de Corfo",
+  nota: "v4.5: portada de borde a borde con ejemplo de resultado · v4.4: diseño adaptado a computador y celular + filtro de resultados por estado · v4.3: contraste, banner piloto, teal · Revisión 17-10-2026 · Correcciones de motor y montos (Emprendamos Semilla, Startup Ciencia, Fondo Crece, Impulso Chileno) + Digitaliza tu Almacén, Impulso Mujer y Crece Sostenible + líneas Mujeres de Corfo",
 };
 
 // ── Preguntas del motor ──────────────────────────────────────
@@ -930,57 +930,87 @@ export default function RutaFondos() {
         </div>
       </div>
 
-      <main className="px-4 pt-6 pb-12">
+      <main className={step === -1 ? "pb-12" : "px-4 pt-6 pb-12"}>
         {/* Portada */}
         {step === -1 && (
-          <div className="max-w-[960px] mx-auto grid gap-4 lg:grid-cols-[1.35fr_1fr] lg:gap-x-5">
-            <div className="rounded-3xl p-6 lg:p-8 text-white shadow-sm lg:col-start-1 lg:row-start-1 lg:row-span-2" style={{ background: `linear-gradient(155deg, ${PALETTE.ink} 55%, #2B3446)` }}>
-              <p className="text-xs font-extrabold uppercase tracking-widest mb-2.5" style={{ color: PALETTE.tealOnDark }}>
-                Orientador de fondos concursables
-              </p>
-              <h2 className="text-2xl lg:text-[34px] font-black leading-tight mb-3">
-                Hay fondos para tu proyecto. El problema es saber <span style={{ color: "#FF8A75" }}>cuál te corresponde</span>.
-              </h2>
-              <p className="text-[15px] lg:text-base leading-relaxed" style={{ color: "#E3E6EC" }}>
-                Responde unas preguntas y te mostramos <strong className="text-white">qué fondos calzan contigo</strong>, cuáles necesitan <strong className="text-white">un paso más</strong> y cuáles se desbloquean en tu siguiente etapa, con links oficiales y fechas de convocatoria.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-3 bg-white rounded-2xl border shadow-sm self-start lg:col-start-2 lg:row-start-1" style={{ borderColor: PALETTE.line }}>
-              {[["19+", "Fondos"], ["✓", "Diagnóstico personalizado"], ["✓", "Sin registro"]].map(([n, l], i) => (
-                <div key={l} className="py-3.5 px-2 text-center" style={i > 0 ? { borderLeft: `1px solid ${PALETTE.line}` } : {}}>
-                  <div className="text-2xl font-black leading-tight" style={{ color: PALETTE.coral }}>{n}</div>
-                  <div className="text-xs font-bold mt-1 leading-tight" style={{ color: PALETTE.ink2 }}>{l}</div>
+          <div>
+            {/* Banda oscura de borde a borde */}
+            <section className="text-white" style={{ background: `linear-gradient(160deg, ${PALETTE.ink} 50%, #2B3446)` }}>
+              <div className="max-w-[992px] mx-auto px-4 py-10 lg:py-16 grid gap-8 lg:grid-cols-[1.25fr_1fr] lg:items-center lg:min-h-[440px]">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-widest mb-3" style={{ color: PALETTE.tealOnDark }}>
+                    Orientador de fondos concursables
+                  </p>
+                  <h2 className="text-[30px] lg:text-[44px] font-black leading-[1.15] mb-4">
+                    Hay fondos para tu proyecto. El problema es saber <span style={{ color: "#FF8A75" }}>cuál te corresponde</span>.
+                  </h2>
+                  <p className="text-base lg:text-lg leading-relaxed mb-6 max-w-[34em]" style={{ color: "#E3E6EC" }}>
+                    Responde unas preguntas y te mostramos <strong className="text-white">qué fondos calzan contigo</strong>, cuáles necesitan <strong className="text-white">un paso más</strong> y cuáles se desbloquean en tu siguiente etapa.
+                  </p>
+                  <button
+                    onClick={() => { trackInicio(); setStep(0); }}
+                    className="w-full sm:w-auto px-8 py-4 rounded-2xl text-white font-extrabold text-lg active:scale-95 transition-transform"
+                    style={{ backgroundColor: PALETTE.coral, boxShadow: "0 6px 18px rgba(232,84,63,.4)" }}
+                  >
+                    Encontrar mi fondo →
+                  </button>
+                  <p className="text-[13px] mt-3" style={{ color: "#B8BECA" }}>
+                    Gratis · Sin registro · Convocatorias revisadas al {VERSION.fecha}
+                  </p>
                 </div>
-              ))}
-            </div>
 
-            <div className="space-y-2 lg:col-start-1 lg:row-start-3">
-            <button
-              onClick={() => { trackInicio(); setStep(0); }}
-              className="w-full py-4 rounded-2xl text-white font-extrabold text-lg active:scale-95 transition-transform"
-              style={{ backgroundColor: PALETTE.coral, boxShadow: "0 4px 14px rgba(232,84,63,.35)" }}
-            >
-              Encontrar mi fondo →
-            </button>
-            <p className="text-[13px] text-center" style={{ color: PALETTE.gray }}>
-              Gratis · Convocatorias revisadas al {VERSION.fecha}
-            </p>
-            </div>
+                {/* Ejemplo de resultado: montos tomados del catálogo para que se actualicen solos */}
+                <div className="space-y-2.5" aria-label="Ejemplo de resultado">
+                  {[
+                    ["Capital Semilla Emprende", "hoy", "✓ Puedes postular"],
+                    ["Emprendamos Semilla", "paso", "→ Te falta un paso"],
+                    ["Fondo Crece", "despues", "◷ Se desbloquea más adelante"],
+                  ].map(([nombre, estado, etiqueta]) => {
+                    const f = FUNDS.find((x) => x.name === nombre);
+                    if (!f) return null;
+                    const c = STATUS_META[estado].color;
+                    return (
+                      <div key={nombre} className="bg-white rounded-2xl px-4 py-3" style={{ borderLeft: `5px solid ${c}`, boxShadow: "0 8px 24px rgba(0,0,0,.25)" }}>
+                        <p className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: c }}>{etiqueta}</p>
+                        <p className="font-extrabold text-[15px] mt-0.5" style={{ color: PALETTE.ink }}>{f.name}</p>
+                        <p className="text-[13px] mt-0.5" style={{ color: PALETTE.ink2 }}>{f.inst} · {f.amount}</p>
+                      </div>
+                    );
+                  })}
+                  <p className="text-xs pt-0.5" style={{ color: "#B8BECA" }}>
+                    Ejemplo de resultado para una emprendedora que vende sin formalizar.
+                  </p>
+                </div>
+              </div>
+            </section>
 
-            <div className="bg-white rounded-2xl border p-4 shadow-sm self-start lg:col-start-2 lg:row-start-2 lg:row-span-2" style={{ borderColor: PALETTE.line }}>
-              <p className="text-xs font-extrabold uppercase tracking-widest mb-3" style={{ color: PALETTE.ink2 }}>
-                Instituciones que cubrimos
-              </p>
-              <p className="text-[13px] font-extrabold mb-2" style={{ color: PALETTE.coralText }}>Fondos públicos</p>
-              <div className="flex flex-wrap gap-1.5 mb-3.5">
-                {["Sercotec", "Corfo", "FOSIS", "PRODEMU", "INDAP", "ANID", "Fondart", "FOGAPE"].map((inst) => (
-                  <span key={inst} className="text-[13px] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#FCE9E5", color: PALETTE.coralText, border: "1px solid #F3B8AC" }}>
-                    {inst}
-                  </span>
+            {/* Bloques blancos */}
+            <div className="max-w-[992px] mx-auto px-4 pt-7 grid gap-4">
+              <div className="grid grid-cols-3 bg-white rounded-2xl border shadow-sm" style={{ borderColor: PALETTE.line }}>
+                {[["19+", "Fondos"], ["✓", "Diagnóstico personalizado"], ["✓", "Sin registro"]].map(([n, l], i) => (
+                  <div key={l} className="py-4 px-2 text-center" style={i > 0 ? { borderLeft: `1px solid ${PALETTE.line}` } : {}}>
+                    <div className="text-2xl font-black leading-tight" style={{ color: PALETTE.coral }}>{n}</div>
+                    <div className="text-xs font-bold mt-1 leading-tight" style={{ color: PALETTE.ink2 }}>{l}</div>
+                  </div>
                 ))}
               </div>
-              <div className="pt-3.5" style={{ borderTop: `1px dashed ${PALETTE.line}` }}>
+
+              <div className="bg-white rounded-2xl border p-4 shadow-sm" style={{ borderColor: PALETTE.line }}>
+                <p className="text-xs font-extrabold uppercase tracking-widest mb-3" style={{ color: PALETTE.ink2 }}>
+                  Instituciones que cubrimos
+                </p>
+                <div className="grid gap-3.5 lg:grid-cols-2 lg:gap-6">
+                <div>
+                <p className="text-[13px] font-extrabold mb-2" style={{ color: PALETTE.coralText }}>Fondos públicos</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {["Sercotec", "Corfo", "FOSIS", "PRODEMU", "INDAP", "ANID", "Fondart", "FOGAPE"].map((inst) => (
+                    <span key={inst} className="text-[13px] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#FCE9E5", color: PALETTE.coralText, border: "1px solid #F3B8AC" }}>
+                      {inst}
+                    </span>
+                  ))}
+                </div>
+                </div>
+                <div className="lg:pl-6 lg:border-l lg:border-dashed" style={{ borderColor: PALETTE.line }}>
                 <p className="text-[13px] font-extrabold mb-2" style={{ color: PALETTE.tealText }}>Fondos privados</p>
                 <div className="flex flex-wrap gap-1.5">
                   {["Abastible", "Banco de Chile", "Fundación Luksic", "ChileConverge", "Jump Chile · UC"].map((inst) => (
@@ -988,6 +1018,8 @@ export default function RutaFondos() {
                       {inst}
                     </span>
                   ))}
+                </div>
+                </div>
                 </div>
               </div>
             </div>
